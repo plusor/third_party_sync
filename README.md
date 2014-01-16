@@ -5,7 +5,7 @@
 #### USAGE
 
 ------------------------ 
-针对一个数据结构的同步
+针对一个API的同步
 
 ```ruby
 TaobaoSync < BaseSync
@@ -36,7 +36,7 @@ TaobaoSync.new(trade_source).sync
 ```
 
 ---------------------
-针对多个数据结构的同步
+针对不同的API同步
 
 ```ruby
 TaobaoSync < BaseSync
@@ -46,7 +46,7 @@ TaobaoSync < BaseSync
        option[:items]      = Proc.new {|response| response["response"]["trades"]}
      end
 
-     query    Proc.new { |cur_page| {method: "trade.detail.get", per: 100, fields: 'xxxx',current_page: cur_page} }
+     query    Proc.new { |cur_page| {method: "products.lists.get", per: 100, fields: 'xxxx',current_page: cur_page} }
      response Proc.new { |query,trade_source| TaobaoQuery.get(query,trade_source.id)}
      # 参数可以使用 Proc,也可使用自定义方法
      parser   :_parser
@@ -57,7 +57,7 @@ TaobaoSync < BaseSync
       option[:total_page] = Proc.new {|response,query| response["total_results"] / query[:per]}
       option[:item]       = Proc.new {|response| response["response"]["trades"]}
     end
-    query    Proc.new {|cur_page| {method: "trade.detail.get", per: 100, fields: 'xxxx',current_page: cur_page} }
+    query    Proc.new {|cur_page| {method: "skus.lists.get", per: 100, fields: 'xxxx',current_page: cur_page} }
     response Proc.new {|query,trade_source| TaobaoQuery.get(query,trade_source.id)}
     parser   :_parser
   end
@@ -83,3 +83,10 @@ end
 trade_source = TradeSource.find(201)
 TaobaoSync.new(trade_source).sync
 ```
+
+
+
+# TODO LIST
+
+* Add Test.
+* Add async readme.
