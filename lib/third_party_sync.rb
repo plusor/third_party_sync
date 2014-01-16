@@ -3,6 +3,6 @@ require 'active_support/concern'
 require 'active_support/dependencies/autoload'
 module ThirdPartySync
   extend ::ActiveSupport::Autoload
-  autoload :ASync
+  autoload :Async
 end
 BaseSync = ThirdPartySync::BaseSync

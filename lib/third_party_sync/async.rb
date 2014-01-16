@@ -3,7 +3,7 @@ require 'sidekiq'
 require 'active_support/callbacks'
 
 module ThirdPartySync
-  module ASync
+  module Async
     def self.included(base)
       base.send(:include,ActiveSupport::Callbacks)
       base.class_eval do
