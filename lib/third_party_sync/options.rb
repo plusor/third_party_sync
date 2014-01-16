@@ -11,6 +11,9 @@ module ThirdPartySync
       #    :total_page:   如果API需要分页查找,需要取出 API返回的总数量的值. 比如 { |response| response["response"]["total_results"] }
       #    :items:        如果API返回的数据需要嵌套取出的话,比如: API返回的是 {"response" => {"trades" => "trade" => [.......]}}
       #                   则值为: {|response| response["response"]["trades"]["trade"] }
+      #    :batch:        如果值为 true ,则调用 processes(group_name,items) . items 为经过 parse 处理过的.
+      #                    默认调用 process(group_name,item).两者的区别在于一次性处理一页items的数据,
+      #                    和一页数据遍历items处理单个的item
       def options
         yield current_group[:options] if block_given?
         raise ArgumentError,'The Argument must be Hash' if !current_group[:options].is_a?(Hash)
@@ -25,7 +28,10 @@ module ThirdPartySync
       # 如果 query 中有分页,比如:
       #   TaobaoQuery.get({method: 'xxx',fields: 'xx',page_no: 1,page_size: 100})
       #     则:
-      #   query {|current_page| {method: 'xxx',fields: 'xx',page_no: current_page,page_size: 100} }
+      #   query {|options| {method: 'xxx',fields: 'xx',page_no: options[:current_page],page_size: 100} }
+      #  如果query需要自定义的时间
+      #  query {|options| {method: 'xxx',fields: 'xx',page_no: options[:current_page],page_size: 100,start_time: start_time.strftime("%Y-%m-%d %H:%M:%S")} }
+      #  TaobaoSync.new(trade_source,{start_time: Time.now,end_time: Time.now})
       def query(query=nil)
         build_maro(:query,query,(Proc.new if block_given?))
       end
@@ -107,7 +113,7 @@ module ThirdPartySync
 
     # API所需的参数
     def query
-      group.query.is_a?(Proc) ? group.query.call(options[:current_page] ||= 1) : group.query
+      group.query.is_a?(Proc) ? group.query.call(options) : group.query
     end
 
     def default_options

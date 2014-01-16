@@ -12,6 +12,7 @@ module ThirdPartySync
         self[name] = {}
         self.class.send(:define_method,name) { self[__method__] }
       end
+      options[:current_page] = 1
     end
 
     def inspect

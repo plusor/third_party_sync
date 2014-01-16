@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'active_support/all'
+require 'debugger'
 
 describe BaseSync do
   class Single < BaseSync
@@ -8,18 +9,24 @@ describe BaseSync do
       option[:items]      = Proc.new {|response| response[:items]}
     end
 
-    query do |cur_page|
+    query do |options|
       {
         method: "taobao.trades.sold.get",
         fields: 'tid',
-        start_created: Time.now.beginning_of_day,
-        end_created: Time.now.end_of_day,
+        start_created: options[:start_time],
+        end_created: options[:end_time],
         page_size: 100,
-        page_no: cur_page
+        page_no: options[:current_page]
       }
     end
 
     response { |query,trade_source| TaobaoQuery.get(query,trade_source) }
+
+    def process(g,item)
+      @its ||= {}
+      @its[g] ||= []
+      @its[g] << item.last.first[:tid]
+    end
   end
 
   class TaobaoQuery
@@ -39,7 +46,7 @@ describe BaseSync do
     end
   end
 
-  let(:single) { Single.new(Struct.new(:name)) }
+  let(:single) { Single.new(Struct.new(:name),{start_time: Time.now.beginning_of_day,end_time: Time.now.end_of_day}) }
 
   describe 'sigle' do
 
@@ -67,6 +74,15 @@ describe BaseSync do
 
     it 'parser' do
       Single.parser.should == {}
+    end
+
+    it 'options[:current_page]' do
+      single.options[:current_page].should == 1
+    end
+
+    it 'sync' do
+      single.sync
+      single.instance_variable_get("@its").should == {default: [1, 2, 3, 4]}
     end
   end
 end

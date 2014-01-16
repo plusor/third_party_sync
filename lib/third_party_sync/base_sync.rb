@@ -47,8 +47,20 @@ module ThirdPartySync
     def sync_by(name)
       chgroup(name)
       each_page do |response|
-        options[:items].call(response).to_a.each {|item| process(group.name,parse(item))}
+        items = options[:items].call(response).to_a.reduce([]) {|ary,item| ary << parse(item)}
+        if options[:batch] == true
+          processes(name,items)
+        else
+          items.each {|item| process(name,item)}
+        end
       end
+    end
+
+    # 批量处理单页的所有items中的数据(items为parse后的).
+    # 如果是插入数据的话, 主要用来减少数据库连接次数(比如sql插入次数), 进行批量插入
+    # 只有在 option[:batch] = true 的情况下才会调用
+    def processes(group_name,items)
+      raise NotImplemented
     end
 
     # item 为经过parser 处理后的对象(一般是Hash)

@@ -16,7 +16,7 @@ TaobaoSync < BaseSync
      option[:items]      = Proc.new {|response| response["response"]["trades"]}
    end
    # API parameters
-   query Proc.new { |cur_page| {method: "trade.detail.get", per: 100, fields: 'xxxx',current_page: cur_page} }
+   query Proc.new { |options| {method: "trade.detail.get", per: 100, fields: 'xxxx',current_page: options[:current_page]} }
 
    # API response
    response Proc.new { |query,trade_source| TaobaoQuery.get(query,trade_source.id)}
@@ -44,9 +44,11 @@ TaobaoSync < BaseSync
      options do |option|
        option[:total_page] = Proc.new {|response,query| response["total_results"] / query[:per]}
        option[:items]      = Proc.new {|response| response["response"]["trades"]}
+       # 批量处理
+       option[:batch]      = true
      end
 
-     query    Proc.new { |cur_page| {method: "products.lists.get", per: 100, fields: 'xxxx',current_page: cur_page} }
+     query    Proc.new { |options| {method: "products.lists.get", per: 100, fields: 'xxxx',current_page: options[:current_page]} }
      response Proc.new { |query,trade_source| TaobaoQuery.get(query,trade_source.id)}
      # 参数可以使用 Proc,也可使用自定义方法
      parser   :_parser
@@ -57,13 +59,13 @@ TaobaoSync < BaseSync
       option[:total_page] = Proc.new {|response,query| response["total_results"] / query[:per]}
       option[:item]       = Proc.new {|response| response["response"]["trades"]}
     end
-    query    Proc.new {|cur_page| {method: "skus.lists.get", per: 100, fields: 'xxxx',current_page: cur_page} }
+    query    Proc.new {|options| {method: "skus.lists.get",start_time: options[:start_time].strftime("%Y-%m-%d %H:%M:%S"),end_time: options[:end_time].strftime("%Y-%m-%d %H:%M:%S"), per: 100, fields: 'xxxx',current_page: options[:current_page]} }
     response Proc.new {|query,trade_source| TaobaoQuery.get(query,trade_source.id)}
     parser   :_parser
   end
 
-  def process(group,item)
-    send("process_#{group}",item)
+  def process(group_name,item)
+    send("process_#{group_name}",item)
   end
 
   def process_taobao_product(item)
@@ -74,14 +76,26 @@ TaobaoSync < BaseSync
     TaobaoSku.first_or_create(item)
   end
 
+  # 批量处理, 在option[:batch] 为 true的情况下. 默认使用 process 方法
+  def processes(group_name,items)
+    send("processes_#{group_name}",items)
+  end
+
+  def processes_taobao_product
+    # 批量插入数据(AR中没有insert这个方法,  主要是体现这个批量插入)
+    TaobaoProduct.insert(items)
+  end
+
   def _parser(struct)
     # 注意 必须要改变原对象才有效 比如 Hash#slice,  必须使用 Hash#slice!
     struct.slice!(*["tid"])
   end
 end
-
-trade_source = TradeSource.find(201)
+# 第二个参数是提供给query的(如果query需要)
+trade_source = TradeSource.find(201,{start_time: Time.now - 1.day,end_time: Time.now})
 TaobaoSync.new(trade_source).sync
+# 只同步 taobao_prodcut
+TaobaoSync.new(trade_source).sync(:taobao_product)
 ```
 
 
