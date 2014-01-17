@@ -15,7 +15,7 @@
 TaobaoSync < BaseSync
    options do |option|
      # 总页数
-     option[:total_page] = Proc.new {|response,query| response["total_results"] / query[:per]}
+     option[:total_page] = Proc.new {|response,query| (response["total_results"] / query[:per].to_f).ceil}
    # 订单的结构的数组
      option[:items]      = Proc.new {|response| response["response"]["trades"]}
    end
@@ -44,9 +44,15 @@ TaobaoSync.new(trade_source).sync
 
 ```ruby
 TaobaoSync < BaseSync
+   # 此方法必须放到最上面
+   def _parser(struct)
+     # 注意 必须要改变原对象才有效 比如 Hash#slice,  必须使用 Hash#slice!
+     struct.slice!(*["tid"])
+   end
+
    group :taobao_product do
      options do |option|
-       option[:total_page] = Proc.new {|response,query| response["total_results"] / query[:per]}
+       option[:total_page] = Proc.new {|response,query| (response["total_results"] / query[:per].to_f).ceil}
        option[:items]      = Proc.new {|response| response["response"]["trades"]}
        # 批量处理
        option[:batch]      = true
@@ -60,7 +66,7 @@ TaobaoSync < BaseSync
 
    group :taobao_sku do
     options  do |option|
-      option[:total_page] = Proc.new {|response,query| response["total_results"] / query[:per]}
+      option[:total_page] = Proc.new {|response,query| (response["total_results"] / query[:per].to_f).ceil}
       option[:item]       = Proc.new {|response| response["response"]["trades"]}
     end
     query    Proc.new {|options| {method: "skus.lists.get",start_time: options[:start_time].strftime("%Y-%m-%d %H:%M:%S"),end_time: options[:end_time].strftime("%Y-%m-%d %H:%M:%S"), per: 100, fields: 'xxxx',current_page: options[:current_page]} }
@@ -89,17 +95,12 @@ TaobaoSync < BaseSync
     # 批量插入数据(AR中没有insert这个方法,  主要是体现这个批量插入)
     TaobaoProduct.insert(items)
   end
-
-  def _parser(struct)
-    # 注意 必须要改变原对象才有效 比如 Hash#slice,  必须使用 Hash#slice!
-    struct.slice!(*["tid"])
-  end
 end
 # 第二个参数是提供给query的(如果query需要)
 trade_source = TradeSource.find(201,{start_time: Time.now - 1.day,end_time: Time.now})
 TaobaoSync.new(trade_source).sync
 # 只同步 taobao_prodcut
-TaobaoSync.new(trade_source).sync(:taobao_product)
+TaobaoSync.new(trade_source).sync(:taobao_product) or TaobaoSync.new(trade_source).sync(only: [:taobao_product]) or TaobaoSync.new(trade_source).sync(except: [:taobao_sku])
 ```
 
 

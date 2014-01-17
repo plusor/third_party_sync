@@ -26,20 +26,26 @@ module ThirdPartySync
         yield response
       end
 
-      return if options[:total_page].zero?
+      return if options[:total_page].to_i.zero?
 
       each_page(&block) if options[:current_page] <= options[:total_page]
     end
 
     # 同步所有group的API, 如果没有group,默认设置为default
-    def sync(group=:all)
-      if group.to_sym == :all
-        groups.each {|name,group| sync_by(name)}
-      elsif groups[group.to_sym].present?
-        sync_by(group)
+    def sync(*args)
+
+      opts = args.extract_options!
+      opts[:except] = [:default] if groups.keys.length > 1
+
+      _groups = if opts[:only]
+        groups.slice(*opts[:only])
+      elsif opts[:except]
+        groups.except(*opts[:except])
       else
-        raise "Not found Group #{group}"
+        args.blank? ? groups() : groups.slice(args[0])
       end
+
+      _groups.each {|name,group| sync_by(name)}
     end
 
     # 同步某一个group的API
@@ -47,7 +53,8 @@ module ThirdPartySync
     def sync_by(name)
       chgroup(name)
       each_page do |response|
-        items = options[:items].call(response).to_a.reduce([]) {|ary,item| ary << parse(item)}
+        items = Array.wrap(options[:items].call(response)).reduce([]) {|ary,item| parse(item); ary << item}
+
         if options[:batch] == true
           processes(name,items)
         else

@@ -49,14 +49,6 @@ module ThirdPartySync
         build_maro(:parser,id,(Proc.new if block_given?))
       end
 
-      def build_maro(name,id,block)
-        current_group[name] = allocate.method(id) if id && allocate.respond_to?(id)
-        current_group[name] = id if id && !allocate.respond_to?(id)
-        block ? (current_group[name] = block) : current_group[name]
-      end
-
-      private :build_maro
-
       # 可用于多个API接口的同步
       # group :taobao_product do
       #   options do
@@ -76,12 +68,13 @@ module ThirdPartySync
       # end
       def group(name,&block)
         @current_group = groups[name]
+        define_method(name) { chgroup(name); self }
         yield
         @current_group = nil
       end
 
       def groups
-        @groups ||= {default: default_group}
+        @groups ||= Hash.new {|k,v| k[v] = Group.new(v)}
       end
 
       def current_group
@@ -89,7 +82,14 @@ module ThirdPartySync
       end
 
       def default_group
-        @default_group ||= Group.new(:default)
+        @default_group ||= groups[:default]
+      end
+
+      private
+      def build_maro(name,id,block)
+        current_group[name] = allocate.method(id) if id && allocate.respond_to?(id)
+        current_group[name] = id if id && !allocate.respond_to?(id)
+        block ? (current_group[name] = block) : current_group[name]
       end
     end
 
@@ -113,7 +113,7 @@ module ThirdPartySync
 
     # API所需的参数
     def query
-      group.query.is_a?(Proc) ? group.query.call(options) : group.query
+      group.query.respond_to?(:call) ? group.query.call(options) : group.query
     end
 
     def default_options
@@ -125,7 +125,7 @@ module ThirdPartySync
     end
 
     def parse(item)
-      group.parser.is_a?(Proc) ? group.parser.call(item) : item
+      group.parser.respond_to?(:call) ? group.parser.call(item) : item
     end
   end
 end
