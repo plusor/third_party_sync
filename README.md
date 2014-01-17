@@ -2,6 +2,10 @@
 
 为第三方平台统一的数据同步接口.  所有平台的API同步接口必须和TaobaoFu一致, 第一个参数为发送API的参数,第二个为请求API辅助的参数
 
+### Install
+
+    gem 'third_party_sync',git: 'git@git.networking.io:ddl1st/third_party_sync.git'
+
 #### USAGE
 
 ------------------------ 
