@@ -125,7 +125,7 @@ module ThirdPartySync
     end
 
     def parse(item)
-      group.parser.respond_to?(:call) ? group.parser.call(item) : item
+      group.parser.respond_to?(:call) ? (instance_exec(item,&group.parser)) : item
     end
   end
 end
