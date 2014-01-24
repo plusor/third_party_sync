@@ -4,7 +4,7 @@
 
 ### Install
 
-    gem 'third_party_sync',git: 'git@git.networking.io:ddl1st/third_party_sync.git'
+    gem 'third_party_sync',git: 'git@git.networking.io:ddl1st/third_party_sync.git',branch: "v0.0.2"
 
 #### USAGE
 
