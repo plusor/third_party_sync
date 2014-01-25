@@ -113,7 +113,7 @@ module ThirdPartySync
 
     # API所需的参数
     def query
-      group.query.respond_to?(:call) ? group.query.call(options) : group.query
+      group.query.respond_to?(:call) ? instance_exec(options,&group.query) : group.query
     end
 
     def default_options
@@ -121,7 +121,7 @@ module ThirdPartySync
     end
 
     def fetch_items
-      group.response.call(query,trade_source)
+      instance_exec(query,trade_source,&group.response)
     end
 
     def parse(item)

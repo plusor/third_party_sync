@@ -19,7 +19,7 @@ module ThirdPartySync
     def each_page(&block)
       response = fetch_items
 
-      options[:total_page].is_a?(Proc) && (options[:total_page] = options[:total_page].call(response,query))
+      options[:total_page].is_a?(Proc) && (options[:total_page] = instance_exec(response,query,&options[:total_page]))
 
       cache_exception(message: "#{options[:message]}同步异常(#{trade_source.name})",data: query.dup.merge(response: response)) do
         options[:current_page] += 1
