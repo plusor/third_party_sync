@@ -20,10 +20,10 @@ TaobaoSync < BaseSync
      option[:items]      = Proc.new {|response| response["response"]["trades"]}
    end
    # API parameters
-   query Proc.new { |options| {method: "trade.detail.get", per: 100, fields: 'xxxx',current_page: options[:current_page]} }
+   query { |options| {method: "trade.detail.get", per: 100, fields: 'xxxx',current_page: options[:current_page]} }
 
    # API response
-   response Proc.new { |query,trade_source| TaobaoQuery.get(query,trade_source.id)}
+   response { |query,trade_source| TaobaoQuery.get(query,trade_source.id)}
 
    # 处理订单的数据结构
    parser do |struct|
@@ -58,8 +58,8 @@ TaobaoSync < BaseSync
        option[:batch]      = true
      end
 
-     query    Proc.new { |options| {method: "products.lists.get", per: 100, fields: 'xxxx',current_page: options[:current_page]} }
-     response Proc.new { |query,trade_source| TaobaoQuery.get(query,trade_source.id)}
+     query    { |options| {method: "products.lists.get", per: 100, fields: 'xxxx',current_page: options[:current_page]} }
+     response { |query,trade_source| TaobaoQuery.get(query,trade_source.id)}
      # 参数可以使用 Proc,也可使用自定义方法
      parser   :_parser
    end
@@ -69,8 +69,8 @@ TaobaoSync < BaseSync
       option[:total_page] = Proc.new {|response,query| (response["total_results"] / query[:per].to_f).ceil}
       option[:item]       = Proc.new {|response| response["response"]["trades"]}
     end
-    query    Proc.new {|options| {method: "skus.lists.get",start_time: options[:start_time].strftime("%Y-%m-%d %H:%M:%S"),end_time: options[:end_time].strftime("%Y-%m-%d %H:%M:%S"), per: 100, fields: 'xxxx',current_page: options[:current_page]} }
-    response Proc.new {|query,trade_source| TaobaoQuery.get(query,trade_source.id)}
+    query    {|options| {method: "skus.lists.get",start_time: options[:start_time].strftime("%Y-%m-%d %H:%M:%S"),end_time: options[:end_time].strftime("%Y-%m-%d %H:%M:%S"), per: 100, fields: 'xxxx',current_page: options[:current_page]} }
+    response {|query,trade_source| TaobaoQuery.get(query,trade_source.id)}
     parser   :_parser
   end
 
