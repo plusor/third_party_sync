@@ -1,4 +1,6 @@
+v 0.0.3
+  - Class method *options*,*query*,*response* block support the current object scope.
 v 0.0.2
-  - Class method *parse* parameters Proc support the current object scope.
+  - Class method *parse* block support the current object scope.
 v 0.0.1
   - init.
