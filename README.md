@@ -97,8 +97,8 @@ TaobaoSync < BaseSync
   end
 end
 # 第二个参数是提供给query的(如果query需要)
-trade_source = TradeSource.find(201,{start_time: Time.now - 1.day,end_time: Time.now})
-TaobaoSync.new(trade_source).sync
+trade_source = TradeSource.find(201)
+TaobaoSync.new(trade_source,{start_time: Time.now - 1.day,end_time: Time.now}).sync
 # 只同步 taobao_prodcut
 TaobaoSync.new(trade_source).sync(:taobao_product) or TaobaoSync.new(trade_source).sync(only: [:taobao_product]) or TaobaoSync.new(trade_source).sync(except: [:taobao_sku])
 ```
