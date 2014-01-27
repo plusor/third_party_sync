@@ -5,7 +5,7 @@ Gem::Specification.new do |gem|
   gem.email                 = 'zhoubin@networking.io'
   gem.description           = '同步第三方API数据'
   gem.summary               = '同步第三方API数据'
-  gem.homepage              = 'https://github.com/intridea/hashie'
+  gem.homepage              = 'http://git.networking.io/ddl1st/third_party_sync'
   gem.files                 = `git ls-files`.split("\n")
   gem.test_files            = `git ls-files -- {test,spec,features}/*`.split("\n")
   gem.name                  = "third_party_sync"
