@@ -107,8 +107,9 @@ module ThirdPartySync
     # 更换当前使用的API
     def chgroup(name)
       @group_name = name.to_sym
-      @options = default_options.merge(@opts)
+      @options = default_options.merge(group_options)
       @query = nil
+      self
     end
 
     # API所需的参数
@@ -116,7 +117,7 @@ module ThirdPartySync
       group.query.respond_to?(:call) ? instance_exec(options,&group.query) : group.query
     end
 
-    def default_options
+    def group_options
       group.options
     end
 

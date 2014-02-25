@@ -4,9 +4,21 @@ require 'taobao_sync'
 
 describe BaseSync do
 
-  let(:taobao_sync) { TaobaoSync.new(Struct.new(:name),{start_time: Time.now.beginning_of_day,end_time: Time.now.end_of_day}) }
+  let(:start_time) { Time.now.beginning_of_day }
+  let(:end_time)   { Time.now.end_of_day }
+  let(:taobao_sync) { TaobaoSync.new(Struct.new(:name),{start_time: start_time,end_time: end_time }) }
 
   describe 'mutiple' do
+    context "groups" do
+      it 'default_options' do
+        taobao_sync.options.should == {:current_page => 1,:start_time => start_time,:end_time => end_time }
+      end
+
+      it 'chgroup options' do
+        taobao_sync.chgroup('trade').options.keys.should  == [:start_time, :end_time, :current_page,:items]
+        taobao_sync.chgroup('trades').options.keys.should == [:start_time, :end_time, :current_page,:total_page,:items,:batch]
+      end
+    end
 
     it 'query' do
       taobao_sync.trade.query.should === {:method=>"trade", :fields=>"tid"}

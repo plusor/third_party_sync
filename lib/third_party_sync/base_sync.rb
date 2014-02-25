@@ -8,11 +8,11 @@ module ThirdPartySync
 
     attr_accessor :current_group
     attr_accessor :trade_source
-    attr_accessor :options
+    attr_accessor :options,:default_options
 
     def initialize(trade_source,options={})
       @trade_source = trade_source
-      @options ||= default_options.merge(@opts=options)
+      @default_options,@options = options,group_options.merge(options)
     end
 
     # 如果API有分页, 遍历每一页
@@ -51,8 +51,7 @@ module ThirdPartySync
     # 同步某一个group的API
     # taobao_sync.sync_by(:taobao_product)
     def sync_by(name)
-      chgroup(name)
-      each_page do |response|
+      chgroup(name).each_page do |response|
         items = Array.wrap(options[:items].call(response)).reduce([]) {|ary,item| parse(item); ary << item}
 
         if options[:batch] == true
