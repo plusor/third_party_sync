@@ -29,8 +29,7 @@ describe BaseSync do
     end
 
     it 'parser' do
-      TaobaoSync.groups[:trade].parser.call({})  == {"trade_type" => "Taobao"}
-      TaobaoSync.groups[:trades].parser.call({}) == {"trade_type" => "Taobao"}
+      taobao_sync.trade.parse({}).should == {"group"=>"trade", "trade_type"=>"Taobao"}
     end
 
     it 'options[:current_page]' do
@@ -47,7 +46,7 @@ describe BaseSync do
       it "attributes" do
         taobao_sync.sync
         taobao_sync.processed.length.should == 1
-        taobao_sync.processed.first.attributes.should == {"tid" => 1,"trade_type" => "Taobao"}
+        taobao_sync.processed.first.attributes.should == {"tid" => 1,"group"=>"trade","trade_type" => "Taobao"}
       end
     end
   end

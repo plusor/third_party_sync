@@ -1,3 +1,5 @@
+v 0.0.4
+  - Bug fix *options*, *query*, *response*, *parse* argument is method.
 v 0.0.3
   - Class method *options*,*query*,*response* block support the current object scope.
 v 0.0.2

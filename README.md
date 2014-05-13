@@ -208,7 +208,6 @@ TaobaoSync.new(trade_source).sync
 
 ```ruby
 TaobaoSync < BaseSync
-   # 此方法必须放到最上面
    def _parser(struct)
      # 注意 必须要改变原对象才有效 比如 Hash#slice,  必须使用 Hash#slice!
      struct.slice!(*["tid"])

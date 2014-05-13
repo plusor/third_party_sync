@@ -7,7 +7,9 @@ class TaobaoSync < BaseSync
   end
 
   def _parser(struct)
+    struct.merge!(default_attributes)
     struct["trade_type"] = "Taobao"
+    struct
   end
 
   group :trades do
@@ -44,6 +46,10 @@ class TaobaoSync < BaseSync
   def process_trade(item)
     @processed ||= []
     @processed << Trade.new(item)
+  end
+
+  def default_attributes
+    {"group"=> group_name.to_s}
   end
 end
 

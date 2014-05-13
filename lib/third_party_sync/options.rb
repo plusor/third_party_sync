@@ -87,8 +87,7 @@ module ThirdPartySync
 
       private
       def build_maro(name,id,block)
-        current_group[name] = allocate.method(id) if id && allocate.respond_to?(id)
-        current_group[name] = id if id && !allocate.respond_to?(id)
+        current_group[name] = instance_method(id) if id && method_defined?(id)
         block ? (current_group[name] = block) : current_group[name]
       end
     end
@@ -114,7 +113,7 @@ module ThirdPartySync
 
     # API所需的参数
     def query
-      group.query.respond_to?(:call) ? instance_exec(options,&group.query) : group.query
+      normal_call(group.query,options)
     end
 
     def group_options
@@ -122,11 +121,19 @@ module ThirdPartySync
     end
 
     def fetch_items
-      instance_exec(query,trade_source,&group.response)
+      normal_call(group.response,query,trade_source)
     end
 
     def parse(item)
-      group.parser.respond_to?(:call) ? (instance_exec(item,&group.parser)) : item
+      normal_call(group.parser,item)
+    end
+    
+    protected
+    def normal_call(block,*args)
+      case block
+      when UnboundMethod then block.bind(self).call(*args)
+      when Proc          then instance_exec(*args,&block)
+      end
     end
   end
 end
