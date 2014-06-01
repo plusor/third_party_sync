@@ -1,6 +1,7 @@
 #encoding: utf-8
 require 'third_party_sync/group'
 require 'third_party_sync/options'
+require 'third_party_sync/async'
 module ThirdPartySync
   class BaseSync
     include ThirdPartySync::Options
@@ -31,21 +32,20 @@ module ThirdPartySync
       each_page(&block) if options[:current_page] <= options[:total_page]
     end
 
-    # 同步所有group的API, 如果没有group,默认设置为default
+    # 同步所有 group, 如果没有 group ,默认设置为 default
     def sync(*args)
+      _parse_args_(*args).each {|name,group| sync_by(name)}
+    end
 
+    def _parse_args_(*args)
       opts = args.extract_options!
-      opts[:except] = [:default] if groups.keys.length > 1
-
-      _groups = if opts[:only]
+      if opts[:only]
         groups.slice(*opts[:only])
       elsif opts[:except]
         groups.except(*opts[:except])
       else
-        args.blank? ? groups() : groups.slice(args[0])
+        args.blank? ? groups() : groups.slice(*args.flatten.map(&:to_sym))
       end
-
-      _groups.each {|name,group| sync_by(name)}
     end
 
     # 同步某一个group的API
@@ -82,5 +82,6 @@ module ThirdPartySync
         yield
       end
     end
+    include Async
   end
 end

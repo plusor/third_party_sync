@@ -6,4 +6,6 @@ require 'rspec'
 require 'rspec/autorun'
 require 'taobao_query'
 RSpec.configure do |config|
+  config.before { ThirdPartySync.redis.flushdb }
+  config.after  { ThirdPartySync.redis.flushdb }
 end

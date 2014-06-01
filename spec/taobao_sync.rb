@@ -36,7 +36,13 @@ class TaobaoSync < BaseSync
 
   def processes_trades(items)
     @processesed ||= []
-    @processesed << Trade.insert(items)
+    if async?(:trades)
+      trades = Trade.new
+      trades.insert(items)
+      store trades
+    else
+      @processesed << Trade.new.insert(items)
+    end
   end
 
   def process(group,item)
@@ -45,23 +51,30 @@ class TaobaoSync < BaseSync
 
   def process_trade(item)
     @processed ||= []
-    @processed << Trade.new(item)
+    if async?(:trade)
+      store Trade.new(item)
+    else
+      @processed << Trade.new(item)
+    end
   end
 
   def default_attributes
     {"group"=> group_name.to_s}
   end
-end
 
-class Trade
-  class << self
-    def insert(items)
-      items.collect {|item| new(item)}
+  class Trade
+
+    attr_accessor :attributes,:items
+    def initialize(attr=nil)
+      @attributes = attr
     end
-  end
 
-  attr_accessor :attributes
-  def initialize(attr)
-    @attributes = attr
+    def insert(items)
+      @items = items
+    end
+
+    def save
+      "puts Done!"
+    end
   end
 end

@@ -17,7 +17,7 @@ class TaobaoTradesSync < BaseSync
   end
 
   response { |query,trade_source| TaobaoQuery.get(query,trade_source) }
-  
+
   parser do |struct|
     struct["trade_type"] = "Taobao"
   end

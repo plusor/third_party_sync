@@ -95,13 +95,15 @@ module ThirdPartySync
     def group_name
       @group_name ||= :default
     end
+
     # 当前使用的API
     def group
       self.class.groups[group_name.to_sym]
     end
 
     def groups
-      self.class.groups
+      gps = self.class.groups
+      gps.keys.length > 1 ? gps.except(:default) : gps
     end
     # 更换当前使用的API
     def chgroup(name)
