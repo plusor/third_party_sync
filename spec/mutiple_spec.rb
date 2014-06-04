@@ -116,7 +116,7 @@ describe BaseSync do
 
       it "holding by all" do
         taobao_sync.holding?.should be_true
-        taobao_sync.conn.keys("*").should == ['1/trade/async','1/trades/async']
+        taobao_sync.conn.keys("*").sort.should == ['1/trade/async','1/trades/async']
       end
 
       it 'async by trade' do
@@ -151,7 +151,7 @@ describe BaseSync do
       it "insert data after async  " do
         taobao_sync.async
         taobao_sync.can_async?.should be_false
-        taobao_sync.conn.keys("*").should == ["1/trade","1/trades"]
+        taobao_sync.conn.keys("*").sort.should == ["1/trade","1/trades"]
       end
     end
   end
