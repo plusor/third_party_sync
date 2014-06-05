@@ -8,15 +8,19 @@ module ThirdPartySync
     module ClassMethods
       # 配置选项
       #   Options:
-      #    :total_page:   如果API需要分页查找,需要取出 API返回的总数量的值. 比如 { |response| response["response"]["total_results"] }
-      #    :items:        如果API返回的数据需要嵌套取出的话,比如: API返回的是 {"response" => {"trades" => "trade" => [.......]}}
-      #                   则值为: {|response| response["response"]["trades"]["trade"] }
+      #    :message:      当前 group 的描述.
       #    :batch:        如果值为 true ,则调用 processes(group_name,items) . items 为经过 parse 处理过的.
       #                    默认调用 process(group_name,item).两者的区别在于一次性处理一页items的数据,
       #                    和一页数据遍历items处理单个的item
-      def options
-        yield current_group[:options] if block_given?
-        raise ArgumentError,'The Argument must be Hash' if !current_group[:options].is_a?(Hash)
+      def options(hashe={})
+        raise ArgumentError,'The Argument must be Hash' if !hashe.is_a?(Hash)
+
+        if block_given?
+          yield current_group[:options]
+        else
+          current_group[:options].replace hashe.merge(current_group[:options])
+        end
+
         current_group[:options]
       end
 
@@ -43,10 +47,22 @@ module ThirdPartySync
         build_maro(:response,id,(Proc.new if block_given?))
       end
 
-      # block 参数 为 options[:items] 集合中的元素.  此方法用来处理元素的值等.
+      # 参数为 items 集合中的元素.  此方法用来处理元素的值等.
       # parser {|struct| struct.slice!(*["tid"])}
       def parser(id=nil)
         build_maro(:parser,id,(Proc.new if block_given?))
+      end
+
+      # 如果API返回的数据需要嵌套取出,比如: API返回的是 {"response" => {"trades" => "trade" => [.......]}}
+      # 则可以写为:  items {|response| response["response"]["trades"]["trade"] }
+      def items(id=nil)
+        build_maro(:items,id,(Proc.new if block_given?))
+      end
+
+      # 如果API需要分页查找,需要取出 API返回的总数量的值. 比如:
+      # total_page { |response| response["response"]["total_pages"] }
+      def total_page(id=nil)
+        build_maro(:total_page,id,(Proc.new if block_given?))
       end
 
       # 可用于多个API接口的同步
@@ -118,23 +134,41 @@ module ThirdPartySync
       normal_call(group.query,options)
     end
 
+    def items(response=response)
+      normal_call(group.items,response)
+    end
+
     def group_options
       group.options
     end
 
-    def fetch_items
+    def response
       normal_call(group.response,query,trade_source)
+    end
+
+    def total_page(response=response)
+      normal_call(group.total_page,response)
     end
 
     def parse(item)
       normal_call(group.parser,item)
     end
-    
+
+    def error_message
+      "#{options[:message]}同步异常(#{trade_source.name})"
+    end
+
+    def request(result)
+      {query: query,result: result}
+    end
+
     protected
     def normal_call(block,*args)
       case block
       when UnboundMethod then block.bind(self).call(*args)
       when Proc          then instance_exec(*args,&block)
+      else
+        block
       end
     end
   end

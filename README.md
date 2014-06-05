@@ -17,7 +17,7 @@
 
     class TaobaoProductSync < BaseSync
       group :default do
-        options { |option| # ... }
+        options { |option| # ... } # or options({message: 'blabla'})
         query {....}
         # ....
       end
@@ -57,50 +57,42 @@
     # 同步所有
     taobao.sync
 
-* *options* 主要用来配置 总页数 `option[:total_page]`, 和 `option[:items]`,即 调用`api` 返回的 `json` 需要取的那层数据
+* *options* 主要用来配置: `option[:message]`, 和 `option[:batch]`. 在初始化对象的时候,可进行附加options. `TaobaoTradeSync.new(trade_source,start_time: Time.now)`
 
-> 1. **option[:total_page]**    总页数,参数为 `block`.
->> `option[:total_page] = Proc.new {|response| (response["total_result"] / 100.0).ceil}`.
-> `block` 的参数为 `api` 的 `response`
-
-> 2. **option[:items]**         去掉请求api返回的嵌套最终取的那层数据. 参数为block.
->> `option[:items] = Proc.new {|response| response["response"]["trades"]}`.
-> `block` 的参数为 `api` 的 `response`
-
-> 3. **option[:current_page]**  系统保留参数.
+> 1. **option[:current_page]**  系统保留参数.
 >> 在 `query` 中可以使用 `options[:current_page]` 便于分页, 默认值为 `1`.
-    
-> 4. **option[:batch]**         默认为false. 同步时,调用 `process` 方法. true 则调用 `processes` 方法.
 
-> 5. **option[:message]**       用于 `api` 请求异常调用 `cache_exception` 的参数,详见 `cache_exception`
+> 2. **option[:batch]**         默认为false. 同步时,调用 `process` 方法. true 则调用 `processes` 方法.
 
+> 3. **option[:message]**       用于 `api` 请求异常调用 `cache_exception` 的参数,详见 `cache_exception`
 
-* *query* 请求api所必须的参数,参数为 `block`.
+* *total_page* 总页数,参数为 `block`. 也可以为方法名,接收的参数为 response. 没有可不填
+> `total_page {|response| (response["total_result"] / 100.0).ceil}`.
+
+* *items*  去掉请求api返回的嵌套最终取的那层数据. 参数为block. 也可以为方法名,接收的参数为 response
+> `items {|response| response["response"]["trades"]}`.
+
+* *query* 请求api所必须的参数,参数为 `block`. 也可以为方法名,接收的参数为 options
 > `query {|options| { fields: 'tid,status',page_size: 100 , page_no: options[:current_page] } }`.
-> block的参数为 `options`
 
-* *response* 用来设置调用 `api`. 参数为 `block`.
+* *response* 用来设置调用 `api`. 参数为 `block`. 也可以为方法名. 接受的参数: `query`, `trade_source`
 > `response { |query,trade_source| TaobaoQuery.get(query,trade_source) }`.
-> `block` 的参数有两个:
-> 第一个是 `query`.
-> 第二个是 初始化`class`的第一个参数. `TaobaoProductSync.new(TradeSource.first)`
 
-* *parser* 用来更新 `item(s)`. 参数为 `block`.
-> `block` 的参数为 `items` 中的元素 (如果items是数组则遍历处理)
->>     parser do |struct|
+* *parser* 用来更新 `item(s)`. 参数为 `block`. `block` 的参数为 `items` 中的元素 (如果items是数组则遍历处理)
+>     parser do |struct|
 >        struct["account_id"] = trade_source.account_id
 >        struct["name"] = struct.delete("title")
 >      end
       
 
 * *process*  自定义方法, 只有当 `options[:batch] != true` 才会调用此方法, 默认为 `nil`.
-> 此方法有两个参数, 第一个参数为 `group` 方法的第一个参数. 第二个是 `item`.  `item` 为经过 `parser` 处理的结构.  `def process(gpname,item) ... end`
+> 此方法有两个参数, 第一个参数为 正在同步的 `group name`(所有group都是遍历进行同步的). 第二个是 `item`.  `item` 为经过 `parser` 处理的结构.  `def process(gpname,item) ... end`
 >>     def process(group_name,item)
 >        TaobaoProduct.create(item)
 >      end
 
 * *processes* 自定义方法, 只有当 `options[:batch] = true` 才会调用此方法.
-> 此方法有两个参数, 第一个参数为 `group` 方法的第一个参数. 第二个是 `items`. `items` 为经过 `parser` 遍历处理过的结构 主要用于批量处理这一页的数据. `def processes(gpname,items) ... end`
+> 此方法有两个参数, 第一个参数为 正在同步的 `group name`(所有group都是遍历进行同步的). 第二个是 `items`. `items` 为经过 `parser` 遍历处理过的结构 主要用于批量处理这一页的数据. `def processes(gpname,items) ... end`
 >>     def process(group_name,item)
 >        send(:"process_#{group_name}",item)
 >      end
@@ -128,17 +120,14 @@
 
 ```ruby
 TaobaoSync < BaseSync
-   options do |option|
-     # 总页数
-     option[:total_page] = Proc.new {|response,query| (response["total_results"] / query[:per].to_f).ceil}
-   # 订单的结构的数组
-     option[:items]      = Proc.new {|response| response["response"]["trades"]}
-   end
+   options({message: "淘宝数据同步"})
+   total_page {|response,query| (response["total_results"] / query[:per].to_f).ceil}
+   items      {|response| response["response"]["trades"]}
    # API parameters
-   query { |options| {method: "trade.detail.get", per: 100, fields: 'xxxx',current_page: options[:current_page]} }
+   query      { |options| {method: "trade.detail.get", per: 100, fields: 'xxxx',current_page: options[:current_page]} }
 
    # API response
-   response { |query,trade_source| TaobaoQuery.get(query,trade_source.id)}
+   response   { |query,trade_source| TaobaoQuery.get(query,trade_source.id)}
 
    # 处理订单的数据结构
    parser do |struct|
@@ -165,27 +154,23 @@ TaobaoSync < BaseSync
    end
 
    group :taobao_product do
-     options do |option|
-       option[:total_page] = Proc.new {|response,query| (response["total_results"] / query[:per].to_f).ceil}
-       option[:items]      = Proc.new {|response| response["response"]["trades"]}
-       # 批量处理
-       option[:batch]      = true
-     end
+     options({message: "淘宝商品同步",batch: true})
+     total_page {|response,query| (response["total_results"] / query[:per].to_f).ceil}
+     items      {|response| response["response"]["trades"]}
 
-     query    { |options| {method: "products.lists.get", per: 100, fields: 'xxxx',current_page: options[:current_page]} }
-     response { |query,trade_source| TaobaoQuery.get(query,trade_source.id)}
+     query      { |options| {method: "products.lists.get", per: 100, fields: 'xxxx',current_page: options[:current_page]} }
+     response   { |query,trade_source| TaobaoQuery.get(query,trade_source.id)}
      # 参数可以使用 Proc,也可使用自定义方法
-     parser   :_parser
+     parser     :_parser
    end
 
    group :taobao_sku do
-    options  do |option|
-      option[:total_page] = Proc.new {|response,query| (response["total_results"] / query[:per].to_f).ceil}
-      option[:item]       = Proc.new {|response| response["response"]["trades"]}
-    end
-    query    {|options| {method: "skus.lists.get",start_time: options[:start_time].strftime("%Y-%m-%d %H:%M:%S"),end_time: options[:end_time].strftime("%Y-%m-%d %H:%M:%S"), per: 100, fields: 'xxxx',current_page: options[:current_page]} }
-    response {|query,trade_source| TaobaoQuery.get(query,trade_source.id)}
-    parser   :_parser
+    options({message: "淘宝SKU同步"})
+    total_page  {|response,query| (response["total_results"] / query[:per].to_f).ceil}
+    items       {|response| response["response"]["trades"]}
+    query       {|options| {method: "skus.lists.get",start_time: options[:start_time].strftime("%Y-%m-%d %H:%M:%S"),end_time: options[:end_time].strftime("%Y-%m-%d %H:%M:%S"), per: 100, fields: 'xxxx',current_page: options[:current_page]} }
+    response    {|query,trade_source| TaobaoQuery.get(query,trade_source.id)}
+    parser      :_parser
   end
 
   def process(group_name,item)
@@ -220,7 +205,6 @@ TaobaoSync.new(trade_source).sync(:taobao_product) or TaobaoSync.new(trade_sourc
 # 或者
 TaobaoSync.new(trade_source).sync(except: [:taobao_sku])
 ```
-
 
 # BaseSync#Async
 

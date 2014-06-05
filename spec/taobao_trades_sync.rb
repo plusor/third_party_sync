@@ -1,9 +1,9 @@
+#encoding: utf-8
 class TaobaoTradesSync < BaseSync
   PAGE_SIZE = 10
-  options do |option|
-    option[:total_page] = Proc.new {|response| (response["response"]["total_results"] / PAGE_SIZE.to_f).ceil}
-    option[:items]      = Proc.new {|response| response["response"]["trades"]["trade"] }
-  end
+  options({ message: "淘宝订单同步" })
+  total_page {|response| (response["response"]["total_results"] / PAGE_SIZE.to_f).ceil}
+  items      {|response| response["response"]["trades"]["trade"] }
 
   query do |options|
     {

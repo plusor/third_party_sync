@@ -1,3 +1,5 @@
+v 0.1.0
+  - options[:items] & option[:total_page] 抽离为单独的方法. 并接受参数为方法名.
 v 0.0.5
   - Support Async
 v 0.0.4

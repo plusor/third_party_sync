@@ -15,8 +15,8 @@ describe BaseSync do
       end
 
       it 'chgroup options' do
-        taobao_sync.chgroup('trade').options.keys.should  == [:start_time, :end_time, :current_page,:items]
-        taobao_sync.chgroup('trades').options.keys.should == [:start_time, :end_time, :current_page,:total_page,:items,:batch]
+        taobao_sync.chgroup('trade').options.keys.should  == [:start_time, :end_time, :message, :current_page]
+        taobao_sync.chgroup('trades').options.keys.should == [:start_time, :end_time, :message, :batch, :current_page]
       end
     end
 
@@ -25,7 +25,7 @@ describe BaseSync do
     end
 
     it 'response' do
-      taobao_sync.trade.fetch_items.should == {"trade_get_response" => {"trade"=>{"tid"=>1}}}
+      taobao_sync.trade.response.should == {"trade_get_response" => {"trade"=>{"tid"=>1}}}
     end
 
     it 'parser' do

@@ -8,10 +8,13 @@ module ThirdPartySync
     end
 
     def initialize_attributes
-      [:options,:query,:response,:parser].each do |name|
+      [:options,:query,:response,:parser,:items,:total_page].each do |name|
         self[name] = {}
-        self.class.send(:define_method,name) { self[__method__] }
+        self[name] = nil if name == :total_page
+
+        self.class.send(:define_method,name) { self[name] }
       end
+
       options[:current_page] = 1
     end
 

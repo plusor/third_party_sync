@@ -18,16 +18,16 @@ module ThirdPartySync
 
     # 如果API有分页, 遍历每一页
     def each_page(&block)
-      response = fetch_items
+      body = response
 
-      options[:total_page].is_a?(Proc) && (options[:total_page] = instance_exec(response,query,&options[:total_page]))
+      options[:total_page] = total_page(body).to_i
 
-      cache_exception(message: "#{options[:message]}同步异常(#{trade_source.name})",data: query.dup.merge(response: response)) do
+      cache_exception(message: error_message,data: request(body)) do
         options[:current_page] += 1
-        yield response
+        yield body
       end
 
-      return if options[:total_page].to_i.zero?
+      return if options[:total_page].zero?
 
       each_page(&block) if options[:current_page] <= options[:total_page]
     end
@@ -51,8 +51,11 @@ module ThirdPartySync
     # 同步某一个group的API
     # taobao_sync.sync_by(:taobao_product)
     def sync_by(name)
-      chgroup(name).each_page do |response|
-        items = Array.wrap(options[:items].call(response)).reduce([]) {|ary,item| parse(item); ary << item}
+      chgroup(name).each_page do |body|
+        items = Array.wrap(items(body)).reduce([]) do |ary,item|
+          parse(item)
+          ary << item
+        end
 
         if options[:batch] == true
           processes(name,items)

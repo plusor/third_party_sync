@@ -20,7 +20,7 @@ describe BaseSync do
     end
 
     it 'response' do
-      taobao_sync.fetch_items.should == {"response" => {"trades"=>{"trade"=>[{"tid"=>1}, {"tid"=>2}, {"tid"=>3}, {"tid"=>4}, {"tid"=>5}, {"tid"=>6}, {"tid"=>7}, {"tid"=>8}, {"tid"=>9}, {"tid"=>10}]}, "total_results"=>100}}
+      taobao_sync.response.should == {"response" => {"trades"=>{"trade"=>[{"tid"=>1}, {"tid"=>2}, {"tid"=>3}, {"tid"=>4}, {"tid"=>5}, {"tid"=>6}, {"tid"=>7}, {"tid"=>8}, {"tid"=>9}, {"tid"=>10}]}, "total_results"=>100}}
     end
 
     it 'parser' do
