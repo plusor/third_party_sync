@@ -18,7 +18,7 @@ module ThirdPartySync
     def holding?(*args)
       asyncs(*args).all? do |gpname,options|
         conn.watch async_key(gpname)
-        conn.multi { conn.setex async_key(gpname),600, 1 }
+        conn.multi { conn.setex async_key(gpname),3600, 1 }
       end
     end
 
@@ -62,8 +62,11 @@ module ThirdPartySync
       end
     end
 
+    # 是否允许确认同步 条件:
+    # 1. 当前没有正在执行中的指定 group(默认所有的group) 异步同步任务
+    # 2. 指定的 group(默认所有 group) 中有异步同步存储的内容
     def can_perform?(*args)
-      asyncs(*args).all? {|gpname,options| conn.exists(dup.send(gpname).redis_key) }
+      asyncs(*args).all? {|gpname,options| !asyncing?(gpname) && conn.exists(dup.send(gpname).redis_key) }
     end
 
     alias_method :wait_perform?,:can_perform?

@@ -137,9 +137,16 @@ describe BaseSync do
       end
 
       it 'perform conditions' do
+        taobao_sync.trade
         taobao_sync.holding?(:trade).should be_true
         taobao_sync.can_perform?(:trade).should be_false
         taobao_sync.perform_by(:trade).should be_false
+
+        taobao_sync.store('')
+        taobao_sync.can_perform?(:trade).should be_false
+
+        taobao_sync.reset_holding(:trade)
+        taobao_sync.can_perform?(:trade).should be_true
       end
 
       it 'perform by' do
