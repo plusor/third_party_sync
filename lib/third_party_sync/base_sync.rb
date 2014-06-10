@@ -58,9 +58,9 @@ module ThirdPartySync
         end
 
         if options[:batch] == true
-          processes(name,items)
+          processes(group_name,items)
         else
-          items.each {|item| process(name,item)}
+          items.each {|item| process(group_name,item)}
         end
       end
     end

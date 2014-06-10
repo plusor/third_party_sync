@@ -140,7 +140,13 @@ TaobaoSync < BaseSync
    end
 end
 trade_source = TradeSource.find(201)
-TaobaoSync.new(trade_source).sync
+ts = TaobaoSync.new(trade_source).sync
+
+ts.response # 等于 response = TaobaoQuery.get(method: 'xxxxx',field: 'xxxx',xxxxx) 如果有多个group 要使用 ts.{group} 来切换到对应的group
+items = ts.items # 等于 response["response"]["trades"]
+item = items.first
+ts.parse item
+item      # 经过 parser 处理后的结果
 ```
 
 ---------------------
@@ -201,8 +207,10 @@ TaobaoSync.new(trade_source,{start_time: Time.now - 1.day,end_time: Time.now}).s
 
 
 # 只同步 taobao_prodcut
-TaobaoSync.new(trade_source).sync(:taobao_product) or TaobaoSync.new(trade_source).sync(only: [:taobao_product])
-# 或者
+TaobaoSync.new(trade_source).sync(:taobao_product)
+# 或
+TaobaoSync.new(trade_source).sync(only: [:taobao_product])
+# 或
 TaobaoSync.new(trade_source).sync(except: [:taobao_sku])
 ```
 
@@ -213,12 +221,13 @@ TaobaoSync.new(trade_source).sync(except: [:taobao_sku])
 
 * `async(*args)`                异步同步,参数同 `sync` 方法 (需要在 process 中自行处理 保存的方式)
 * `can_async?(*args)`           是否允许异步同步(参数为空的话,默认 groups )
-* `async?(*args)`               指定的args(groups)同步方式是否是异步的. 如果为空的话, 默认所有groups
+* `async?(*args)`               指定的args(groups)同步方式是否是异步的. 如果为空的话, 默认所有groups. 别名 `asyncing?`
 * `store(object)`               存入(当前`group`) redis中. 最好使用未被保存(save,update)的对象
 * `paginate(options)`           在调用 `async` 后. 调用此方法分页查看(当前 `group`) `store` 的内容, options 默认选项为 page: 1, per: 25
 * `cancle(*args)`               撤销 `args(groups)` 下异步同步存入redis中的内容.(如果为空的话, 撤销当前类下所有的 `group`). 正在进行同步中的group,将不会被撤销.
 * `transaction`                 事物块, 可复写: def transaction(&block); ActiveRecord::Base.transaction { yield }; end
-* `perform(*args,:save)`        处理 `groupname(s) (args)` 下 `store` 存入的数据,遍历参数 `:save`.  `action` 默认为 `save`. (args 可以为数组,如果为空的话,默认处理当前类下所有的 `group`). 如果给定的 groups 有正在同步中的,将不会被处理.
+* `perform(*args,action: :save)`处理 `groupname(s) (args)` 下 `store` 存入的数据,遍历参数 `:save`.  `action` 默认为 `save`. (args 可以为数组,如果为空的话,默认处理当前类下所有的 `group`). 如果给定的 groups 有正在同步中的,将不会被处理.
+* `can_perform?(*args)`         是否允许确认同步. 如果指定的group(默认所有)有正在同步中的,或者有没有同步的内容 则不允许确认同步.
 * `redis_key`                   redis 存储的键. 默认为 `:trade_source_id/:group_name`. 可重定义: def redis_key; "#{trade_source.name};end", 最好不要这样改, 如果groups多的话, 存进去的对象的类就可能不是一样了. 这样就不要在列表页显示了
 
 ```ruby
@@ -250,7 +259,7 @@ sync.async
 @records = sync.paginate(page: params[:page],per: params[:per])  # 页面直接 paginate(@records)
 
 > 如果是多个groups的话,需要切换到那个 `group`. @records = sync.send(:products).paginate(page: params[:page],per: params[:per]) 
-
+@records.syncing? 
 @records.perform  # 确认同步
 @records.cancle   # 取消同步
 ```
