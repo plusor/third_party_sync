@@ -111,7 +111,7 @@
 
 ### Install
 
-    gem 'third_party_sync',git: 'git@git.networking.io:nioteam/third_party_sync.git',branch: "v0.0.5"
+    gem 'third_party_sync',git: 'git@github.com:plusor/third_party_sync.git',branch: "v0.0.5"
 
 #### 完整示例
 
